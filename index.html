@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>show ip interview — préparation Cloud Engineer</title>
+<meta name="theme-color" content="#0A0E14">
+<meta name="description" content="Fiches de révision hors-ligne pour un entretien Cloud Engineer : migration AWS, réseau, coûts, stockage, Linux.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cloud Interview">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+:root{
+  --bg:#0A0E14; --surface:#121820; --surface2:#171F2A; --surface3:#1D2733;
+  --border:#232D3B; --border-soft:#1A2330;
+  --text:#DCE3EA; --text-dim:#8595A6; --text-faint:#5A6779;
+  --accent:#5EEAD4; --accent-dim:#2E7D74;
+  --amber:#F5A623; --red:#FF6B6B; --violet:#9D8CFF;
+  --mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", "Liberation Mono", monospace;
+  --sans: -apple-system, "Segoe UI", "Helvetica Neue", Roboto, system-ui, sans-serif;
+  color-scheme: dark;
+  padding-top: env(safe-area-inset-top,0px);
+  padding-bottom: env(safe-area-inset-bottom,0px);
+  box-sizing:border-box;
+}
+*{box-sizing:border-box;}
+html{scroll-padding-top: env(safe-area-inset-top,0px); height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text); font-family:var(--sans);
+  min-height:100%; -webkit-font-smoothing:antialiased;
+}
+.app{display:flex; min-height:100vh;}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar{
+  width:264px; flex-shrink:0; background:var(--surface);
+  border-right:1px solid var(--border); position:sticky; top:0;
+  height:100vh; overflow-y:auto; padding:20px 14px 24px;
+  padding-top:calc(20px + env(safe-area-inset-top,0px));
+}
+.brand{padding:4px 8px 18px; border-bottom:1px solid var(--border-soft); margin-bottom:14px;}
+.brand .prompt{font-family:var(--mono); font-size:11px; color:var(--accent); letter-spacing:.02em;}
+.brand h1{font-size:16px; margin:6px 0 2px; font-weight:700; letter-spacing:-.01em; line-height:1.25;}
+.brand p{font-size:12px; color:var(--text-dim); margin:0; line-height:1.5;}
+
+.search-box{position:relative; margin-bottom:16px;}
+.search-box input{
+  width:100%; background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-family:var(--sans); font-size:13px; padding:9px 12px 9px 30px;
+  border-radius:7px; outline:none;
+}
+.search-box input:focus{border-color:var(--accent-dim);}
+.search-box svg{position:absolute; left:9px; top:9px; width:15px; height:15px; stroke:var(--text-faint);}
+
+.nav-item{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:left;
+  background:none; border:none; color:var(--text-dim); font-family:var(--sans);
+  font-size:13.5px; font-weight:500; padding:8px 10px; border-radius:7px;
+  cursor:pointer; margin-bottom:2px;
+}
+.nav-item .dot{width:6px; height:6px; border-radius:2px; background:var(--border); flex-shrink:0;}
+.nav-item:hover{background:var(--surface2); color:var(--text);}
+.nav-item.active{background:var(--surface3); color:var(--text);}
+.nav-item.active .dot{background:var(--accent);}
+.nav-item .count{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--text-faint);}
+
+.route-status{
+  margin-top:18px; padding:11px 12px; border:1px solid var(--border-soft); border-radius:8px;
+  font-family:var(--mono); font-size:10.5px; color:var(--text-faint); line-height:1.7;
+}
+.route-status b{color:var(--accent);}
+
+.install-btn{
+  display:none; width:100%; margin-top:12px; background:var(--accent); color:#04201C;
+  border:none; padding:10px; border-radius:7px; font-family:var(--sans); font-weight:700;
+  font-size:12.5px; cursor:pointer;
+}
+.install-btn.show{display:block;}
+.offline-pill{
+  display:none; align-items:center; gap:6px; margin-top:10px; padding:7px 10px;
+  border:1px solid var(--border-soft); border-radius:20px; font-family:var(--mono);
+  font-size:10.5px; color:var(--text-faint);
+}
+.offline-pill.show{display:flex;}
+.offline-pill .led{width:6px; height:6px; border-radius:50%; background:var(--red);}
+
+/* ---------- MAIN ---------- */
+.main{flex:1; min-width:0; padding:28px 30px 60px; max-width:900px;}
+.topline{font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:6px;}
+.topline span{color:var(--accent);}
+h2.section-title{font-size:22px; font-weight:800; letter-spacing:-.015em; margin:0 0 4px;}
+.section-sub{color:var(--text-dim); font-size:13.5px; margin:0 0 22px; line-height:1.55; max-width:640px;}
+
+.chain{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:26px; font-family:var(--mono); font-size:11px;}
+.chain span{background:var(--surface2); border:1px solid var(--border); padding:4px 9px; border-radius:5px; color:var(--text-dim);}
+.chain .arrow{color:var(--text-faint); padding:4px 0; border:none; background:none;}
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  margin-bottom:14px; overflow:hidden; scroll-margin-top:20px;
+}
+.card-head{display:flex; align-items:center; gap:11px; padding:15px 17px; cursor:pointer; user-select:none;}
+.card-head .idx{font-family:var(--mono); font-size:11px; color:var(--accent-dim); width:26px; flex-shrink:0;}
+.card-head h3{font-size:14.5px; font-weight:600; margin:0; flex:1; line-height:1.4;}
+.card-head .tag{
+  font-family:var(--mono); font-size:9.5px; color:var(--text-faint); border:1px solid var(--border-soft);
+  padding:2px 7px; border-radius:20px; flex-shrink:0;
+}
+.card-head .chev{color:var(--text-faint); flex-shrink:0; transition:transform .15s ease;}
+.card.open .chev{transform:rotate(90deg); color:var(--accent);}
+.card-body{display:none; padding:0 17px 18px 52px; font-size:13.5px; line-height:1.65; color:var(--text);}
+.card.open .card-body{display:block;}
+.card-body p{margin:0 0 10px;}
+.card-body ul{margin:0 0 10px; padding-left:18px;}
+.card-body li{margin-bottom:4px;}
+.diagram{
+  background:var(--bg); border:1px solid var(--border-soft); border-radius:7px; padding:12px 14px;
+  font-family:var(--mono); font-size:11.5px; color:#9FB4C7; white-space:pre; overflow-x:auto;
+  margin:10px 0; line-height:1.5;
+}
+.phrase{
+  border-left:2px solid var(--accent); background:rgba(94,234,212,.06); border-radius:0 7px 7px 0;
+  padding:10px 13px; margin-top:10px; font-size:13px; font-style:italic; color:#C9D7E0;
+}
+.phrase b{font-style:normal; color:var(--accent); font-size:10.5px; display:block; margin-bottom:4px; font-family:var(--mono); letter-spacing:.03em;}
+.trap{
+  border-left:2px solid var(--red); background:rgba(255,107,107,.06); border-radius:0 7px 7px 0;
+  padding:10px 13px; margin-top:10px; font-size:12.5px; color:#E8B8B8;
+}
+.trap b{color:var(--red); font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;}
+.no-results{color:var(--text-faint); font-size:13px; padding:30px 0; text-align:center; font-family:var(--mono);}
+
+.mobile-topbar{display:none;}
+@media (max-width: 860px){
+  .app{flex-direction:column;}
+  .sidebar{
+    position:fixed; inset:0; height:100dvh; width:82%; max-width:320px; z-index:40;
+    transform:translateX(-100%); transition:transform .2s ease; box-shadow:0 0 40px rgba(0,0,0,.5);
+  }
+  .sidebar.open{transform:translateX(0);}
+  .mobile-topbar{
+    display:flex; align-items:center; gap:10px; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top,0px));
+    background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20;
+  }
+  .mobile-topbar button{background:none; border:1px solid var(--border); color:var(--text); border-radius:7px; padding:7px 9px;}
+  .mobile-topbar span{font-family:var(--mono); font-size:12px; color:var(--accent);}
+  .scrim{display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:30;}
+  .scrim.show{display:block;}
+  .main{padding:20px 16px 50px;}
+  .card-body{padding-left:17px;}
+}
+::-webkit-scrollbar{width:9px; height:9px;}
+::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="mobile-topbar">
+    <button id="menuBtn" aria-label="menu">☰</button>
+    <span>show ip interview</span>
+  </div>
+  <div class="scrim" id="scrim"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="prompt">$ ssh interview@aws-cloud-engineer</div>
+      <h1>Préparation entretien<br>Cloud Engineer</h1>
+      <p>Migration, réseau, coûts, stockage, troubleshooting — disponible hors-ligne.</p>
+    </div>
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" placeholder="chercher : VPC, DMS, right-sizing…">
+    </div>
+    <nav id="navList"></nav>
+    <div class="route-status">
+      <b>Destination</b> réussir l'entretien<br>
+      <b>Via</b> architecture → réseau → sécurité → compute → storage → monitoring → coût<br>
+      <b>Metric</b> comprendre &gt; réciter
+    </div>
+    <button class="install-btn" id="installBtn">↓ Installer l'app</button>
+    <div class="offline-pill" id="offlinePill"><span class="led"></span>hors-ligne — cache actif</div>
+  </aside>
+
+  <main class="main">
+    <div class="topline">show running-config <span id="crumb">— tout</span></div>
+    <h2 class="section-title" id="pageTitle">Fil conducteur de l'entretien</h2>
+    <p class="section-sub" id="pageSub">Deux chaînes de raisonnement à avoir en tête à tout moment. Tape une catégorie à gauche, ou cherche un mot-clé.</p>
+    <div class="chain" id="chainTop"></div>
+    <div id="cardList"></div>
+    <div class="no-results" id="noResults" style="display:none;"># aucune correspondance — essaie un autre terme</div>
+  </main>
+</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const CATS = [
+  {id:'fil', label:'Fil conducteur'},
+  {id:'migration', label:'Stratégie de migration'},
+  {id:'reseau', label:'Réseau & VPC'},
+  {id:'routage', label:'OSPF, BGP & Direct Connect'},
+  {id:'outils', label:'Outils & stratégies 6R'},
+  {id:'cout', label:'Coûts & optimisation'},
+  {id:'stockage', label:'Stockage (EBS / EFS)'},
+  {id:'compute', label:'Compute — Lambda'},
+  {id:'linux', label:'Linux & troubleshooting'},
+  {id:'projet', label:'Ton projet monitoring'},
+];
+
+const ITEMS = [
+{cat:'fil', tag:'méthode', title:"La question piège d'ouverture", body:`
+<p>Face à une question de migration, ne réponds jamais en citant un outil en premier. Un Cloud Engineer commence toujours par <b>comprendre l'existant</b>, puis choisit une stratégie.</p>
+<div class="diagram">Analyser → Choisir la stratégie → Préparer AWS → Connecter
+→ Répliquer → Tester → Cutover → Monitorer</div>
+<div class="phrase"><b>phrase entretien</b>« Je commence par analyser l'infrastructure existante — serveurs, dépendances, volumes de données, contraintes de disponibilité — avant de choisir une stratégie de migration adaptée. »</div>`},
+{cat:'fil', tag:'méthode', title:"Les deux chaînes à garder en tête", body:`
+<p>Si tu maîtrises ces deux raisonnements, tu n'as pas besoin de connaître 500 services AWS par cœur.</p>
+<div class="diagram">Face à un problème Cloud :
+Architecture → Réseau → Sécurité → Compute → Storage → Monitoring → Coût → Disponibilité
+
+Face à une migration :
+Discovery → Strategy → Connectivity → Replication → Testing
+→ Cutover → Monitoring → Rollback</div>`},
+
+{cat:'migration', tag:'stratégie', title:"Migration On-Premise → AWS, la réponse complète", body:`
+<p>C'est la question centrale : « Une entreprise veut migrer avec un minimum d'interruption. »</p>
+<div class="phrase"><b>phrase entretien</b>« J'analyse l'existant, je choisis Rehost ou Replatform selon le cas, je prépare le VPC et la connectivité On-Premise ↔ AWS, j'utilise MGN pour les serveurs et DMS avec CDC pour la base, je teste sur un pilote, puis je réduis la fenêtre de coupure au cutover en gardant un plan de rollback. »</div>`},
+{cat:'migration', tag:'zéro downtime', title:"Réplication continue plutôt que copie unique", body:`
+<p>Au lieu de copier une fois puis basculer (ce qui impose un arrêt), on réplique en continu pendant que le système reste en production.</p>
+<ul>
+<li><b>Bases de données</b> — Full Load initial avec AWS DMS, puis CDC (Change Data Capture) : les transactions On-Premise sont répliquées en temps quasi-réel vers AWS pendant des jours ou des semaines.</li>
+<li><b>Serveurs / VM</b> — AWS MGN installe un agent qui réplique en continu les blocs disque vers AWS ; le serveur source tourne sans interruption.</li>
+</ul>`},
+{cat:'migration', tag:'zéro downtime', title:"Basculement Blue/Green via Route 53", body:`
+<p>L'environnement AWS (Green) est monté et testé pendant que le On-Premise (Blue) gère 100 % du trafic.</p>
+<div class="diagram">Route 53 — Weighted Routing
+Blue (On-Prem) 100% ──┐
+                      ├── 90/10 → 75/25 → 50/50 → 0/100
+Green (AWS)      0% ──┘
+
+TTL DNS bas (~60s) → rollback en quelques secondes si anomalie</div>
+<div class="phrase"><b>phrase entretien</b>« Je privilégie le Blue/Green associé à une réplication continue en arrière-plan : MGN pour les serveurs, DMS+CDC pour la base. Le basculement se fait via Route 53 avec un TTL bas, ce qui permet un rollback instantané. »</div>`},
+{cat:'migration', tag:'zéro downtime', title:"Connexion hybride pendant la transition", body:`
+<p>Durant la migration, On-Premise et AWS doivent communiquer de façon sécurisée et à faible latence, via <b>Direct Connect</b> ou un <b>VPN IPsec Site-to-Site</b>. Ça permet une architecture hybride temporaire — par exemple une application encore On-Premise qui interroge déjà une base de données côté AWS.</p>`},
+{cat:'migration', tag:'zéro downtime', title:"Si un cutover strict est nécessaire", body:`
+<div class="diagram">1. Planifier une fenêtre d'heures creuses (nuit / week-end)
+2. Passer la source en lecture seule (stopper les écritures)
+3. Aligner les données finales (minutes, grâce au CDC déjà actif)
+4. Rediriger le trafic vers AWS
+5. Réactiver l'écriture</div>`},
+{cat:'migration', tag:'6R', title:"Rehost — Lift and Shift", body:`
+<p>Tu déplaces le workload tel quel, sans le modifier.</p>
+<div class="diagram">On-Premise (Apache, App, fichiers) ──→ EC2</div>
+<p><b>Avantage :</b> rapide. <b>Inconvénient :</b> tu transportes aussi les défauts de l'ancienne architecture, sans exploiter pleinement le Cloud.</p>`},
+{cat:'migration', tag:'6R', title:"Replatform — améliorer sans tout réécrire", body:`
+<div class="diagram">Avant : App ──→ MySQL installé sur un serveur
+Après : App ──→ Amazon RDS (service managé)</div>
+<p>Tu remplaces une partie de l'infra par un service managé (patching, sauvegardes, HA pris en charge par AWS) sans réécrire l'application.</p>`},
+{cat:'migration', tag:'6R', title:"Refactor — repenser l'architecture", body:`
+<div class="diagram">Monolithe (Users, Orders, Reports, Auth) → 1 Database
+              ↓ refactor
+API Gateway → Lambda(Users) / Lambda(Orders) / Lambda(Reports) → Services DB</div>
+<p>But : exploiter pleinement le Cloud — serverless, autoscaling, découplage.</p>`},
+
+{cat:'reseau', tag:'VPC', title:"Region, AZ, VPC : la confusion classique", body:`
+<p><b>Un VPC appartient à une seule Region</b>, mais peut contenir plusieurs Availability Zones de cette Region.</p>
+<div class="diagram">Region eu-west-1
+└── VPC 10.0.0.0/16
+    ├── AZ eu-west-1a  → subnets
+    ├── AZ eu-west-1b  → subnets
+    └── AZ eu-west-1c  → subnets</div>
+<p>1 VPC → 1 Region → plusieurs AZ. Et un <b>subnet appartient à une seule AZ</b>. Pour couvrir deux Regions, il faut deux VPC distincts, reliés ensuite si besoin.</p>`},
+{cat:'reseau', tag:'CIDR', title:"CIDR — découper la résidence", body:`
+<p>Le CIDR définit la plage d'adresses IP réservée. <code>/16</code> = grande plage, <code>/24</code> = plage plus petite.</p>
+<div class="diagram">VPC 10.0.0.0/16
+├── Public  Subnet A   10.0.1.0/24
+├── Public  Subnet B   10.0.2.0/24
+├── Private Subnet A   10.0.10.0/24
+└── Private Subnet B   10.0.11.0/24</div>`},
+{cat:'reseau', tag:'routage', title:"Route Table — le GPS du VPC", body:`
+<div class="diagram">Destination        Target
+10.0.0.0/16        local
+0.0.0.0/0           Internet Gateway</div>
+<p>Trafic interne → reste dans le VPC. Tout le reste → part vers l'Internet Gateway.</p>`},
+{cat:'reseau', tag:'passerelle', title:"Internet Gateway", body:`
+<p>L'IGW est la porte entre le VPC et Internet. Mais l'attacher ne rend <b>pas automatiquement</b> les machines accessibles : il faut aussi une route vers l'IGW, une IP publique et les bonnes règles de sécurité.</p>
+<div class="trap"><b>piège</b>« Attacher un IGW = ma machine est sur Internet » est faux sans route + IP publique + Security Group.</div>`},
+{cat:'reseau', tag:'passerelle', title:"NAT Gateway — la sortie à sens unique", body:`
+<div class="diagram">Internet
+   ↑
+NAT Gateway
+   ↑
+Private Subnet → EC2</div>
+<p>Une EC2 privée peut sortir vers Internet (updates, packages, API) mais Internet ne peut pas initier de connexion entrante vers elle via le NAT.</p>`},
+{cat:'reseau', tag:'IP', title:"Public IP vs Elastic IP", body:`
+<p><b>Public IP</b> classique : attribuée automatiquement, peut changer (ex. après un stop/start).</p>
+<p><b>Elastic IP</b> : adresse IPv4 publique statique, allouée à ton compte, déplaçable d'une ressource à une autre — mais liée à une Region, et facturée par AWS qu'elle soit utilisée ou non.</p>
+<div class="phrase"><b>phrase entretien</b>« Une Public IP peut être attribuée automatiquement et changer, tandis qu'une Elastic IP est une adresse statique que j'alloue et associe à une ressource. »</div>`},
+{cat:'reseau', tag:'VLAN', title:"Access port vs Trunk", body:`
+<div class="diagram">Access port : PC Finance ── Access ──→ VLAN 10 (un seul VLAN)
+
+Trunk :  Switch A ====TRUNK(802.1Q)==== Switch B
+              VLAN 10 / VLAN 20 / VLAN 30 (plusieurs VLANs)</div>
+<div class="phrase"><b>phrase entretien</b>« Un port access transporte le trafic d'un seul VLAN vers un terminal, un port trunk transporte plusieurs VLANs sur une même liaison, notamment entre deux switches. »</div>`},
+
+{cat:'routage', tag:'IGP', title:"OSPF — routage dynamique interne", body:`
+<div class="diagram">        R2
+      /    \\
+Internet-R1    R4-Kinshasa
+      \\    /
+        R3</div>
+<p>Les routeurs échangent la topologie et recalculent le meilleur chemin. Si R1→R2→R4 tombe, OSPF bascule via R3. <b>OSPF fonctionne à l'intérieur d'un même système autonome.</b></p>`},
+{cat:'routage', tag:'EGP', title:"BGP — le protocole d'Internet", body:`
+<p>BGP est un <b>EGP</b> (Exterior Gateway Protocol) : il connecte des réseaux indépendants (Systèmes Autonomes) entre eux, contrairement à OSPF qui route à l'intérieur d'un même réseau.</p>
+<div class="diagram">Entreprise A (AS 65001) ──BGP── Entreprise B (AS 65002)</div>
+<p>Type Path Vector, basé sur TCP port 179, orienté par des politiques plutôt que par la vitesse brute.</p>
+<div class="phrase"><b>phrase entretien</b>« BGP est le protocole de routage entre Systèmes Autonomes qui fait fonctionner Internet. En Cloud, on l'utilise en eBGP pour échanger dynamiquement les routes entre le On-Premise et les VPCs AWS, via Direct Connect ou un VPN Site-to-Site. »</div>`},
+{cat:'routage', tag:'EGP', title:"OSPF vs BGP en une phrase", body:`
+<div class="diagram">OSPF → « Comment router correctement à l'intérieur de mon réseau ? »
+BGP  → « Quels réseaux sont accessibles à travers cet autre réseau ? »</div>`},
+{cat:'routage', tag:'Direct Connect', title:"Direct Connect — connexion dédiée à AWS", body:`
+<div class="diagram">Entreprise → Routeur → Direct Connect → AWS</div>
+<p>Direct Connect n'est pas lui-même BGP : c'est <b>connexion physique + Virtual Interface + BGP</b>. AWS distingue private VIF (accès à un VPC en IP privées), public VIF (services AWS publics) et transit VIF (via Transit Gateway).</p>
+<ul>
+<li><b>Performance</b> — latence stable et faible, bande passante dédiée (50 Mbps à 100 Gbps).</li>
+<li><b>Coût</b> — inbound généralement gratuit, outbound moins cher qu'en Internet public ; rentable à gros volume.</li>
+<li><b>Sécurité</b> — le trafic ne transite pas par Internet public.</li>
+<li><b>Routage dynamique</b> — BGP échange automatiquement les routes entre sous-réseaux locaux et VPCs/Transit Gateway.</li>
+<li><b>Migration</b> — support idéal pour MGN et DMS avec synchronisation continue.</li>
+</ul>
+<div class="phrase"><b>phrase entretien</b>« Direct Connect établit une liaison physique et privée entre le Data Center et AWS : latence faible et constante, sécurité accrue, coûts de transfert réduits. C'est le pilier des architectures hybrides et des migrations à fort volume. »</div>`},
+{cat:'routage', tag:'Direct Connect', title:"Pourquoi Direct Connect pour une migration ?", body:`
+<p>Direct Connect n'est <b>pas un outil de migration de données</b> — c'est de la connectivité réseau. On le combine ensuite avec DataSync pour transférer les fichiers, ou avec MGN/DMS pour la réplication continue.</p>
+<div class="diagram">Data Center → Direct Connect → AWS
+                              + DataSync (transfert fichiers)</div>`},
+
+{cat:'outils', tag:'référence', title:"Qui fait quoi — table mentale", body:`
+<div class="diagram">Découvrir/analyser l'existant   → Application Discovery Service
+Migrer des serveurs             → AWS MGN
+Migrer une base de données      → AWS DMS
+Transférer des fichiers         → DataSync
+Très gros volume physique       → Snow Family
+Connectivité réseau dédiée      → Direct Connect</div>`},
+{cat:'outils', tag:'MGN', title:"AWS MGN — réplication de serveurs", body:`
+<div class="diagram">Serveur On-Prem → Agent → MGN → réplication continue → EC2</div>
+<p>MGN réplique les blocs du serveur source en continu, puis permet de lancer/tester avant le basculement final, avec une fenêtre de cutover typiquement de quelques minutes.</p>`},
+{cat:'outils', tag:'DMS', title:"AWS DMS — réplication de base de données", body:`
+<div class="diagram">MySQL On-Prem → Full Load → DMS → RDS
+MySQL On-Prem → changements (CDC) → DMS → RDS
+puis : stop app → dernière synchro → bascule RDS → test → prod</div>
+<p>La base source continue de fonctionner pendant la réplication grâce au Change Data Capture.</p>`},
+{cat:'outils', tag:'DataSync', title:"DataSync — fichiers", body:`
+<div class="diagram">Serveur fichiers On-Prem → DataSync Agent → S3 / EFS</div>
+<p>Automatise et accélère le transfert de données entre stockage On-Premise et S3/EFS.</p>`},
+{cat:'outils', tag:'Snow Family', title:"Snow Family — très gros volumes", body:`
+<p>Exemple : 500 To à migrer avec une connexion Internet lente. On transporte physiquement les données via un équipement Snow plutôt que par le réseau.</p>`},
+
+{cat:'cout', tag:'estimation', title:"Avant / après déploiement", body:`
+<div class="diagram">Avant  déploiement → AWS Pricing Calculator (estimer)
+Après  déploiement → Cost Explorer (analyser)
+En continu          → AWS Budgets (alerter sur des seuils)</div>`},
+{cat:'cout', tag:'organisation', title:"Cost Allocation Tags", body:`
+<p>Attribuer les coûts à des catégories (projet, département, environnement) pour suivre les dépenses par équipe.</p>
+<div class="diagram">EC2 #1 → Project=Monitoring
+EC2 #2 → Project=Website
+EC2 #3 → Project=Monitoring</div>
+<div class="phrase"><b>phrase entretien</b>« Les cost allocation tags permettent d'attribuer les coûts AWS à des catégories comme un projet, un département ou un environnement, pour une meilleure visibilité dans Cost Explorer. »</div>`},
+{cat:'cout', tag:'optimisation', title:"Right-sizing", body:`
+<p>Analyser l'utilisation réelle et réduire la taille des ressources surdimensionnées.</p>
+<div class="diagram">EC2 8 vCPU / 32 GB, CPU=5%, RAM=10% → redimensionner → 2 vCPU / 8 GB</div>`},
+{cat:'cout', tag:'engagement', title:"Savings Plans vs Reserved Instances vs Spot", body:`
+<div class="diagram">On-Demand      → flexible, plus cher
+Savings Plans  → engagement de dépense/usage compute, flexible
+Reserved Inst. → engagement lié à une config EC2 précise
+Spot Instances → capacité inutilisée, très réduite, interruptible</div>
+<p>AWS recommande aujourd'hui les Savings Plans plutôt que les Reserved Instances dans sa documentation. Spot convient au batch, calcul distribué, tests — pas à un service devant rester up 24/7.</p>`},
+{cat:'cout', tag:'piège', title:"« EC2 ne coûte que quand elle tourne » — faux", body:`
+<div class="trap"><b>question piège</b>Non : le coût d'une instance dépend de son état et de son modèle de facturation, mais des ressources associées (volumes EBS, snapshots, IPv4 publiques) peuvent continuer à générer des coûts même instance arrêtée. Il faut regarder l'architecture complète dans Cost Explorer, pas seulement l'état de l'instance.</div>`},
+
+{cat:'stockage', tag:'EBS vs EFS', title:"EBS — stockage bloc, une seule instance", body:`
+<p>Utiliser EBS quand : c'est le disque OS de l'EC2, ou une base de données (MySQL, PostgreSQL, MongoDB…) exigeant une latence réseau quasi nulle. Le stockage est dédié à une seule instance, dans une seule AZ.</p>`},
+{cat:'stockage', tag:'EBS vs EFS', title:"EFS — système de fichiers partagé", body:`
+<p>Utiliser EFS quand : plusieurs EC2 d'un Auto Scaling Group doivent accéder au même dossier (ex. fichiers uploadés d'un WordPress), pour du contenu partagé, ou du Big Data où plusieurs nœuds lisent/écrivent en même temps. Nativement Multi-AZ, taille auto-ajustée.</p>
+<div class="phrase"><b>phrase entretien</b>« EBS est un stockage bloc rattaché à une seule instance dans une seule AZ, pour l'OS et les bases nécessitant une latence ultra-faible. EFS est un système de fichiers réseau (NFS) Multi-AZ, accessible par des milliers d'instances simultanément, pour le partage de fichiers ou les clusters web. »</div>`},
+{cat:'stockage', tag:'snapshots', title:"Snapshots EBS", body:`
+<p>Un snapshot est une photo à un instant T d'un volume EBS. Les snapshots suivants sont <b>incrémentaux</b> : seuls les blocs modifiés depuis le précédent sont conservés.</p>
+<div class="trap"><b>coût</b>Les snapshots inutilisés s'accumulent et génèrent des coûts. Mettre en place une politique de rétention (Data Lifecycle Manager ou AWS Backup).</div>`},
+
+{cat:'compute', tag:'FaaS', title:"Lambda — serverless compute, pas juste PaaS", body:`
+<p>Lambda exécute du code sans provisionner ni gérer de serveurs ; AWS gère l'infrastructure, la capacité et la mise à l'échelle.</p>
+<div class="diagram">IaaS  → tu gères OS, patch, runtime (EC2)
+PaaS  → tu fournis l'app, la plateforme gère l'infra
+FaaS  → tu fournis une fonction, AWS exécute + scale + gère les serveurs (Lambda)</div>
+<div class="phrase"><b>phrase entretien</b>« Lambda est un service serverless de compute, plus précisément du FaaS — Function as a Service. On peut le rapprocher du PaaS car AWS prend en charge une grande partie de l'infrastructure, mais le terme le plus précis reste FaaS. »</div>`},
+{cat:'compute', tag:'architecture', title:"Ton architecture Lambda type", body:`
+<div class="diagram">Client → GET /report
+  ↓
+API Gateway → déclenche → Lambda
+  ↓
+Lambda génère le rapport → dépose sur S3
+  ↓
+Lambda génère une Pre-Signed URL (accès temporaire à l'objet)
+  ↓
+Client télécharge via l'URL</div>
+<p>Sache dessiner ce flux — c'est le cœur d'une architecture événementielle serverless.</p>`},
+
+{cat:'linux', tag:'commandes', title:"Connectivité & processus", body:`
+<div class="diagram">ping 8.8.8.8         → teste la connectivité ICMP (peut être bloqué, pas 100% fiable)
+ssh user@server      → connexion distante
+top                  → processus & ressources en temps réel</div>`},
+{cat:'linux', tag:'commandes', title:"Mémoire, disque, services", body:`
+<div class="diagram">free -h               → RAM et swap, lisible par un humain
+df -h                 → espace disque utilisé par filesystem
+systemctl status nginx → état d'un service (active/inactive/failed)
+journalctl -u nginx    → logs du service via systemd/journald</div>`},
+{cat:'linux', tag:'commandes', title:"Réseau : ports, IP, routes", body:`
+<div class="diagram">ss -tulpn   → ports/sockets en écoute (22=SSH, 80=HTTP, 443=HTTPS)
+ip addr     → interfaces réseau et adresses IP
+ip route    → table de routage locale, prochain saut par destination</div>`},
+{cat:'linux', tag:'méthode', title:"« Le serveur Web n'est plus accessible » — méthode", body:`
+<p>Ne récite jamais 15 commandes au hasard. Détermine d'abord si ça vient de la connectivité, de la machine, du réseau, du service ou de la config.</p>
+<div class="diagram">1. Connectivité → ping / ssh
+2. Machine      → top, free -h, df -h
+3. Réseau       → ip addr, ip route
+4. Service      → systemctl status
+5. Ports        → ss -tulpn
+6. Logs         → journalctl
+7. Correction   → restart / configuration
+8. Vérification → test utilisateur</div>`},
+
+{cat:'projet', tag:'architecture', title:"Ton stack de monitoring", body:`
+<div class="diagram">AWS → VPC → EC2 → Docker
+                    ├── App
+                    ├── Node Exporter → métriques système Linux
+                    └── Prometheus → Grafana (dashboards)</div>
+<div class="phrase"><b>phrase entretien</b>« J'ai construit une plateforme de monitoring sur AWS, dans un VPC sécurisé. Node Exporter exposait les métriques système, Prometheus les récupérait et Grafana permettait de visualiser l'état de l'infrastructure. J'ai utilisé Docker pour déployer certains composants, et simulé des incidents pour pratiquer le diagnostic. »</div>`},
+{cat:'projet', tag:'incidents', title:"Les incidents que tu as pratiqués", body:`
+<ul>
+<li><b>CPU élevé</b> — charge artificielle, observation via Node Exporter → Prometheus → Grafana, puis identification du processus responsable.</li>
+<li><b>Disque plein</b> — génération de fichiers, diagnostic avec <code>df -h</code>.</li>
+<li><b>Service inaccessible</b> — <code>systemctl stop</code>, vérification avec <code>systemctl status</code> et les logs.</li>
+<li><b>Problème réseau</b> — perte de connectivité simulée, diagnostic avec <code>ip addr</code> / <code>ip route</code>.</li>
+</ul>
+<div class="diagram">Incident → Métrique/alerte → Diagnostic → Logs
+→ Root Cause → Correction → Vérification</div>
+<p>C'est du <b>Cloud Operations</b> concret — le raisonnement compte plus que la commande exacte.</p>`},
+];
+
+/* ---------------- RENDER ---------------- */
+const navList = document.getElementById('navList');
+const cardList = document.getElementById('cardList');
+const pageTitle = document.getElementById('pageTitle');
+const pageSub = document.getElementById('pageSub');
+const crumb = document.getElementById('crumb');
+const chainTop = document.getElementById('chainTop');
+const noResults = document.getElementById('noResults');
+const searchInput = document.getElementById('searchInput');
+
+let activeCat = 'fil';
+let query = '';
+
+function countFor(id){ return ITEMS.filter(i=>i.cat===id).length; }
+
+function renderNav(){
+  navList.innerHTML = CATS.map(c => `
+    <button class="nav-item ${c.id===activeCat && !query ? 'active':''}" data-cat="${c.id}">
+      <span class="dot"></span>${c.label}<span class="count">${countFor(c.id)}</span>
+    </button>`).join('');
+  navList.querySelectorAll('.nav-item').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      activeCat = btn.dataset.cat; query=''; searchInput.value='';
+      renderNav(); renderCards(); closeMobile();
+    });
+  });
+}
+
+function renderChain(){
+  if(activeCat!=='fil'){ chainTop.style.display='none'; return; }
+  chainTop.style.display='flex';
+  const steps = ['Architecture','Réseau','Sécurité','Compute','Storage','Monitoring','Coût','Disponibilité'];
+  chainTop.innerHTML = steps.map((s,i)=>`<span>${s}</span>${i<steps.length-1?'<span class="arrow">→</span>':''}`).join('');
+}
+
+function renderCards(){
+  let list;
+  if(query){
+    const q = query.toLowerCase();
+    list = ITEMS.filter(i => (i.title+i.body+i.tag).toLowerCase().includes(q));
+    pageTitle.textContent = `Résultats pour « ${query} »`;
+    pageSub.textContent = `${list.length} entrée(s) trouvée(s).`;
+    crumb.textContent = '— recherche';
+  } else {
+    list = ITEMS.filter(i=>i.cat===activeCat);
+    const c = CATS.find(c=>c.id===activeCat);
+    pageTitle.textContent = c.label;
+    pageSub.textContent = activeCat==='fil'
+      ? "Deux chaînes de raisonnement à avoir en tête à tout moment. Choisis une catégorie à gauche, ou cherche un mot-clé."
+      : `${list.length} fiche(s) — tape pour déplier.`;
+    crumb.textContent = '— ' + c.label.toLowerCase();
+  }
+  renderChain();
+  noResults.style.display = list.length ? 'none':'block';
+  cardList.innerHTML = list.map((item, idx)=>`
+    <div class="card" data-i="${idx}">
+      <div class="card-head">
+        <span class="idx">${String(idx+1).padStart(2,'0')}</span>
+        <h3>${item.title}</h3>
+        <span class="tag">${item.tag}</span>
+        <span class="chev">›</span>
+      </div>
+      <div class="card-body">${item.body}</div>
+    </div>`).join('');
+  cardList.querySelectorAll('.card-head').forEach(h=>{
+    h.addEventListener('click', ()=> h.parentElement.classList.toggle('open'));
+  });
+  if(list.length===1) cardList.querySelector('.card').classList.add('open');
+}
+
+searchInput.addEventListener('input', (e)=>{ query = e.target.value.trim(); renderCards(); renderNav(); });
+
+renderNav(); renderCards();
+
+/* ---------------- MOBILE MENU ---------------- */
+const sidebar = document.getElementById('sidebar');
+const scrim = document.getElementById('scrim');
+document.getElementById('menuBtn').addEventListener('click', ()=>{ sidebar.classList.add('open'); scrim.classList.add('show'); });
+scrim.addEventListener('click', closeMobile);
+function closeMobile(){ sidebar.classList.remove('open'); scrim.classList.remove('show'); }
+
+/* ---------------- PWA install ---------------- */
+let deferredPrompt;
+const installBtn = document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault(); deferredPrompt = e; installBtn.classList.add('show');
+});
+installBtn.addEventListener('click', async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null; installBtn.classList.remove('show');
+});
+window.addEventListener('appinstalled', ()=>{ installBtn.classList.remove('show'); });
+
+/* ---------------- offline indicator ---------------- */
+const offlinePill = document.getElementById('offlinePill');
+function updateOnlineStatus(){ offlinePill.classList.toggle('show', !navigator.onLine); }
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+/* ---------------- service worker registration ---------------- */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
