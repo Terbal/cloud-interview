@@ -134,6 +134,51 @@ h2.section-title{font-size:22px; font-weight:800; letter-spacing:-.015em; margin
 .trap b{color:var(--red); font-family:var(--mono); font-size:10.5px; letter-spacing:.03em;}
 .no-results{color:var(--text-faint); font-size:13px; padding:30px 0; text-align:center; font-family:var(--mono);}
 
+/* ---------- QUIZ ---------- */
+.quiz-progress{display:flex; align-items:center; gap:10px; margin-bottom:18px; font-family:var(--mono); font-size:11px; color:var(--text-faint);}
+.quiz-bar{flex:1; height:5px; background:var(--surface2); border-radius:4px; overflow:hidden;}
+.quiz-bar-fill{height:100%; background:var(--accent); transition:width .25s ease;}
+.quiz-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:22px 20px;}
+.quiz-card h3{font-size:15.5px; font-weight:600; margin:0 0 18px; line-height:1.5;}
+.quiz-opt{
+  display:block; width:100%; text-align:left; background:var(--surface2); border:1px solid var(--border);
+  color:var(--text); font-family:var(--sans); font-size:13.5px; padding:12px 14px; border-radius:8px;
+  margin-bottom:9px; cursor:pointer;
+}
+.quiz-opt:hover:not(:disabled){border-color:var(--accent-dim);}
+.quiz-opt:disabled{cursor:default;}
+.quiz-opt.correct{border-color:var(--accent); background:rgba(94,234,212,.1); color:var(--accent);}
+.quiz-opt.wrong{border-color:var(--red); background:rgba(255,107,107,.1); color:#FF9E9E;}
+.quiz-exp{margin-top:14px; padding:12px 14px; border-radius:8px; background:var(--bg); border:1px solid var(--border-soft); font-size:13px; color:var(--text-dim); line-height:1.6; display:none;}
+.quiz-exp.show{display:block;}
+.quiz-next{margin-top:16px; background:var(--accent); color:#04201C; border:none; font-weight:700; font-family:var(--sans); font-size:13px; padding:10px 18px; border-radius:7px; cursor:pointer; display:none;}
+.quiz-next.show{display:inline-block;}
+.quiz-result{text-align:center; padding:36px 20px;}
+.quiz-result .score{font-family:var(--mono); font-size:38px; color:var(--accent); font-weight:700;}
+.quiz-result p{color:var(--text-dim); font-size:13.5px; margin:8px 0 20px;}
+.quiz-restart{background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:var(--sans); font-weight:600; font-size:13px; padding:10px 20px; border-radius:7px; cursor:pointer;}
+
+/* ---------- FLASHCARDS ---------- */
+.fc-progress{font-family:var(--mono); font-size:11px; color:var(--text-faint); margin-bottom:14px;}
+.fc-stage{display:flex; justify-content:center; padding:10px 0 22px;}
+.fc-card{
+  width:100%; max-width:520px; min-height:220px; background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; display:flex; align-items:center; justify-content:center; text-align:center;
+  padding:30px 26px; cursor:pointer; position:relative;
+}
+.fc-card .fc-label{position:absolute; top:14px; left:16px; font-family:var(--mono); font-size:10px; color:var(--text-faint); letter-spacing:.05em;}
+.fc-card .fc-content{font-size:16px; line-height:1.6; font-weight:500;}
+.fc-card.back{background:var(--surface3); border-color:var(--accent-dim);}
+.fc-card.back .fc-content{font-size:14px; font-weight:400; color:#C9D7E0;}
+.fc-hint{text-align:center; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); margin-bottom:20px;}
+.fc-controls{display:flex; justify-content:center; gap:10px;}
+.fc-controls button{
+  background:var(--surface2); border:1px solid var(--border); color:var(--text); font-family:var(--sans);
+  font-weight:600; font-size:13px; padding:9px 16px; border-radius:7px; cursor:pointer;
+}
+.fc-controls button:hover{border-color:var(--accent-dim);}
+.fc-controls button.primary{background:var(--accent); color:#04201C; border:none;}
+
 .mobile-topbar{display:none;}
 @media (max-width: 860px){
   .app{flex-direction:column;}
@@ -210,6 +255,8 @@ const CATS = [
   {id:'compute', label:'Compute — Lambda'},
   {id:'linux', label:'Linux & troubleshooting'},
   {id:'projet', label:'Ton projet monitoring'},
+  {id:'quiz', label:'Quiz'},
+  {id:'flashcards', label:'Flashcards'},
 ];
 
 const ITEMS = [
@@ -451,6 +498,65 @@ ip route    → table de routage locale, prochain saut par destination</div>`},
 <p>C'est du <b>Cloud Operations</b> concret — le raisonnement compte plus que la commande exacte.</p>`},
 ];
 
+const QUIZ = [
+  {q:"Un VPC peut-il s'étendre sur plusieurs AWS Regions ?", options:["Oui, nativement","Non, un VPC appartient à une seule Region","Oui, mais uniquement avec Direct Connect","Oui, si les CIDR sont identiques"], correct:1, exp:"Un VPC appartient toujours à une seule Region, mais peut contenir plusieurs AZ de cette Region."},
+  {q:"Un subnet AWS peut-il s'étendre sur plusieurs AZ ?", options:["Oui, toujours","Non, un subnet appartient à une seule AZ","Oui, si le CIDR est en /16","Seulement pour les subnets privés"], correct:1, exp:"Un subnet réside entièrement dans une seule Availability Zone."},
+  {q:"Attacher un Internet Gateway à un VPC rend-il automatiquement une EC2 accessible depuis Internet ?", options:["Oui, c'est suffisant","Non, il faut aussi une route vers l'IGW, une IP publique et les bonnes règles de sécurité","Oui, mais seulement pour les subnets publics","Non, il faut obligatoirement un NAT Gateway"], correct:1, exp:"L'IGW seul ne suffit pas : il faut une route, une IP publique et un Security Group adapté."},
+  {q:"Quel est le rôle principal d'un NAT Gateway ?", options:["Permettre à Internet d'entrer dans un subnet privé","Permettre à des ressources privées de sortir vers Internet sans accepter les connexions entrantes","Router le trafic entre deux VPC","Chiffrer le trafic sortant"], correct:1, exp:"Le NAT Gateway autorise le trafic sortant depuis un subnet privé, sans permettre à Internet d'initier une connexion entrante."},
+  {q:"Quelle est la différence clé entre une Public IP classique et une Elastic IP ?", options:["Aucune différence", "L'Elastic IP est statique et associable à une ressource ; la Public IP peut changer", "La Public IP est payante, l'Elastic IP est gratuite", "L'Elastic IP ne fonctionne qu'en IPv6"], correct:1, exp:"L'Elastic IP est une adresse IPv4 publique statique qu'on alloue et associe soi-même ; la Public IP classique peut changer, par exemple après un stop/start."},
+  {q:"Un port trunk sert à…", options:["Isoler un seul VLAN vers un poste","Transporter plusieurs VLANs sur une même liaison, souvent entre deux switches","Chiffrer le trafic VLAN","Remplacer un Access Point Wi-Fi"], correct:1, exp:"Le trunk (souvent 802.1Q) transporte plusieurs VLANs sur une seule liaison physique."},
+  {q:"OSPF et BGP, quelle affirmation est correcte ?", options:["OSPF route entre systèmes autonomes, BGP à l'intérieur d'un réseau","OSPF route à l'intérieur d'un réseau (IGP), BGP entre systèmes autonomes (EGP)","Les deux font exactement la même chose","BGP est plus rapide donc toujours préféré à OSPF"], correct:1, exp:"OSPF est un protocole de routage interne (IGP), BGP un protocole de routage externe (EGP) entre AS."},
+  {q:"Dans une architecture Direct Connect, BGP sert à…", options:["Chiffrer la connexion physique","Échanger dynamiquement les routes entre le réseau On-Premise et les VPCs AWS","Remplacer le VPN IPsec","Gérer la facturation du lien"], correct:1, exp:"BGP permet au routeur client et à AWS d'échanger automatiquement leurs routes (CIDR locaux et VPC)."},
+  {q:"Direct Connect est-il lui-même un outil de migration de données ?", options:["Oui, il migre les fichiers automatiquement","Non, c'est une connectivité réseau ; on le combine avec DataSync, MGN ou DMS pour migrer réellement","Oui, mais uniquement pour les bases de données","Non, il sert uniquement au VPN"], correct:1, exp:"Direct Connect fournit la connectivité ; la migration effective passe par d'autres services (DataSync, MGN, DMS…)."},
+  {q:"Quelle stratégie de migration consiste à déplacer un serveur tel quel, sans le modifier ?", options:["Refactor","Replatform","Rehost (Lift and Shift)","Repurchase"], correct:2, exp:"Le Rehost déplace le workload tel qu'il est, avec un minimum de changements."},
+  {q:"Migrer un MySQL auto-géré vers Amazon RDS sans réécrire l'application, c'est…", options:["Rehost","Replatform","Refactor","Retire"], correct:1, exp:"Replatform : on améliore une brique (ici, la base) via un service managé, sans réécrire l'application."},
+  {q:"Quel service AWS réplique en continu les blocs disque d'un serveur On-Premise vers AWS ?", options:["AWS DMS","AWS DataSync","AWS MGN","AWS Snow Family"], correct:2, exp:"AWS MGN (Application Migration Service) réplique en continu au niveau bloc, pour un cutover de quelques minutes."},
+  {q:"Le CDC (Change Data Capture) dans AWS DMS sert à…", options:["Chiffrer la base de données","Répliquer en continu les changements après le Full Load initial","Faire une sauvegarde unique","Supprimer les anciennes données"], correct:1, exp:"Après un Full Load, le CDC réplique en continu les transactions afin de garder la cible synchronisée."},
+  {q:"Pour migrer 500 To de données avec une connexion Internet lente, on utilise plutôt…", options:["DataSync uniquement","La Snow Family (transport physique)","Direct Connect seul","AWS Budgets"], correct:1, exp:"La Snow Family permet de transporter physiquement de très gros volumes quand le réseau est un goulot d'étranglement."},
+  {q:"Dans une bascule Blue/Green avec Route 53, à quoi sert un TTL DNS bas ?", options:["Réduire les coûts de requêtes DNS","Permettre un rollback rapide en cas d'anomalie","Accélérer la réplication CDC","Sécuriser le trafic HTTPS"], correct:1, exp:"Un TTL bas fait que les résolveurs DNS captent vite le changement, donc un retour en arrière est quasi immédiat."},
+  {q:"Une instance EC2 arrêtée (stopped) peut-elle continuer à générer des coûts ?", options:["Non, jamais", "Oui — par exemple des volumes EBS, des snapshots ou une IPv4 publique associée", "Seulement si elle est en Spot", "Seulement pendant les 24 premières heures"], correct:1, exp:"D'autres ressources liées (EBS, snapshots, IP publique) continuent de facturer même instance stoppée."},
+  {q:"Quel outil FinOps sert à estimer un coût AVANT de déployer une architecture ?", options:["Cost Explorer","AWS Budgets","AWS Pricing Calculator","Cost Allocation Tags"], correct:2, exp:"Le Pricing Calculator estime le coût en amont ; Cost Explorer analyse après coup."},
+  {q:"Quand privilégier une Spot Instance ?", options:["Pour une base de données critique 24/7","Pour un workload tolérant les interruptions, comme du batch ou du calcul distribué","Pour un pare-feu applicatif","Pour un serveur DNS principal"], correct:1, exp:"Spot est peu cher mais interruptible : parfait pour du batch, pas pour un service critique en continu."},
+  {q:"Quel stockage choisir pour la base de données d'une application, avec latence minimale, dédiée à une seule instance ?", options:["Amazon EFS","Amazon EBS","Amazon S3","AWS Snowball"], correct:1, exp:"EBS est un stockage bloc dédié à une seule instance dans une seule AZ, idéal pour l'OS ou une base exigeante en latence."},
+  {q:"Plusieurs EC2 d'un Auto Scaling Group doivent partager le même dossier de fichiers uploadés : quel service ?", options:["Amazon EBS","Amazon EFS","Amazon Snow Family","AWS Direct Connect"], correct:1, exp:"EFS est un système de fichiers réseau (NFS) Multi-AZ, accessible simultanément par plusieurs instances."},
+  {q:"Un snapshot EBS après le premier est…", options:["Une copie complète à chaque fois","Incrémental : seuls les blocs modifiés sont conservés","Automatiquement supprimé après 24h","Stocké gratuitement sans limite"], correct:1, exp:"Les snapshots suivants sont incrémentaux, ce qui réduit le stockage utilisé — mais ils doivent quand même être nettoyés régulièrement."},
+  {q:"Quel terme décrit le plus précisément AWS Lambda ?", options:["IaaS","PaaS","FaaS — Function as a Service", "SaaS"], correct:2, exp:"Lambda est un service serverless de compute, précisément qualifié de FaaS ; on peut le rapprocher du PaaS mais FaaS est le terme exact."},
+  {q:"Dans une architecture API Gateway → Lambda → S3, à quoi sert la Pre-Signed URL ?", options:["Chiffrer le code Lambda","Donner un accès temporaire à un objet S3 selon permissions et durée définies","Router le trafic vers un NAT Gateway","Authentifier l'API Gateway auprès d'IAM"], correct:1, exp:"La Pre-Signed URL permet au client de télécharger l'objet S3 directement, de façon temporaire et sécurisée."},
+  {q:"Quelle commande Linux affiche l'espace disque utilisé par système de fichiers ?", options:["free -h","top","df -h","ss -tulpn"], correct:2, exp:"df -h affiche l'utilisation des filesystems en format lisible."},
+  {q:"Face à « le serveur Web n'est plus accessible », quelle est la première étape de méthode ?", options:["Redémarrer le serveur immédiatement","Déterminer si le problème vient de la connectivité, de la machine, du réseau ou du service","Consulter directement les logs applicatifs","Recréer une nouvelle instance EC2"], correct:1, exp:"On isole d'abord la catégorie du problème (connectivité / machine / réseau / service) avant d'agir, plutôt que de réciter des commandes au hasard."},
+];
+
+const FLASHCARDS = [
+  {front:"VPC", back:"Réseau virtuel privé, appartenant à une seule AWS Region, pouvant contenir plusieurs AZ."},
+  {front:"Subnet", back:"Sous-découpage d'un VPC, réside entièrement dans une seule Availability Zone."},
+  {front:"CIDR", back:"Notation définissant une plage d'adresses IP (ex. /16 large, /24 plus petite) pour découper un réseau."},
+  {front:"Route Table", back:"Ensemble de règles qui indiquent, pour chaque destination, par où le trafic doit sortir (ex. local, Internet Gateway)."},
+  {front:"Internet Gateway (IGW)", back:"Passerelle entre le VPC et Internet. Ne rend pas les machines accessibles à elle seule — il faut route + IP publique + Security Group."},
+  {front:"NAT Gateway", back:"Permet à des ressources en subnet privé de sortir vers Internet, sans accepter de connexions entrantes non sollicitées."},
+  {front:"Public IP vs Elastic IP", back:"Public IP : attribuée automatiquement, peut changer. Elastic IP : adresse IPv4 statique, allouée au compte, déplaçable entre ressources."},
+  {front:"Access port vs Trunk", back:"Access : transporte un seul VLAN vers un terminal. Trunk : transporte plusieurs VLANs sur une même liaison (souvent 802.1Q)."},
+  {front:"OSPF", back:"Protocole de routage dynamique interne (IGP) : les routeurs échangent la topologie et calculent le meilleur chemin à l'intérieur d'un même réseau."},
+  {front:"BGP", back:"Protocole de routage entre Systèmes Autonomes (EGP) — le protocole d'Internet. Utilisé en eBGP pour échanger des routes entre On-Premise et AWS."},
+  {front:"AWS Direct Connect", back:"Connexion réseau dédiée et privée entre un Data Center et AWS. Nécessite Virtual Interface + BGP. N'est pas un outil de migration de données."},
+  {front:"Rehost", back:"Lift and Shift : déplacer un workload tel quel, sans le modifier. Rapide, mais transporte aussi les défauts existants."},
+  {front:"Replatform", back:"Remplacer une brique d'infrastructure par un service managé (ex. MySQL → RDS) sans réécrire l'application."},
+  {front:"Refactor", back:"Repenser l'architecture en profondeur pour exploiter pleinement le Cloud (ex. monolithe → microservices/Lambda)."},
+  {front:"AWS MGN", back:"Réplique en continu les blocs disque d'un serveur source vers AWS, pour un cutover de quelques minutes."},
+  {front:"AWS DMS + CDC", back:"DMS fait un Full Load initial puis, via CDC (Change Data Capture), réplique en continu les changements de la base source."},
+  {front:"AWS DataSync", back:"Automatise et accélère le transfert de fichiers entre stockage On-Premise et S3/EFS."},
+  {front:"Snow Family", back:"Transport physique de très gros volumes de données quand le réseau est un goulot d'étranglement."},
+  {front:"Blue/Green + Route 53", back:"Basculement progressif du trafic (weighted routing) avec un TTL DNS bas, pour permettre un rollback quasi instantané."},
+  {front:"Cost Allocation Tags", back:"Tags (projet, département, environnement) permettant de suivre les coûts AWS par catégorie dans Cost Explorer."},
+  {front:"Right-sizing", back:"Ajuster la taille d'une ressource à son utilisation réelle observée, pour réduire les coûts."},
+  {front:"Savings Plans vs Reserved Instances vs Spot", back:"Savings Plans : engagement flexible sur l'usage compute. Reserved Instances : engagement lié à une config précise. Spot : capacité inutilisée, très réduite, interruptible."},
+  {front:"EBS", back:"Stockage bloc dédié à une seule instance EC2, dans une seule AZ — idéal pour l'OS ou une base exigeant une latence minimale."},
+  {front:"EFS", back:"Système de fichiers réseau (NFS), nativement Multi-AZ, accessible simultanément par de nombreuses instances."},
+  {front:"Snapshot EBS", back:"Photo d'un volume à un instant T. Les snapshots suivants sont incrémentaux (seuls les blocs modifiés sont conservés)."},
+  {front:"Lambda / FaaS", back:"Compute serverless : AWS gère l'infrastructure, la capacité et la mise à l'échelle. Le terme précis est FaaS (Function as a Service)."},
+  {front:"Pre-Signed URL", back:"URL temporaire donnant accès à un objet S3 selon des permissions et une durée définies."},
+  {front:"Méthode de troubleshooting", back:"Connectivité → Machine → Réseau → Service → Ports → Logs → Correction → Vérification."},
+];
+
 /* ---------------- RENDER ---------------- */
 const navList = document.getElementById('navList');
 const cardList = document.getElementById('cardList');
@@ -464,7 +570,11 @@ const searchInput = document.getElementById('searchInput');
 let activeCat = 'fil';
 let query = '';
 
-function countFor(id){ return ITEMS.filter(i=>i.cat===id).length; }
+function countFor(id){
+  if(id==='quiz') return QUIZ.length;
+  if(id==='flashcards') return FLASHCARDS.length;
+  return ITEMS.filter(i=>i.cat===id).length;
+}
 
 function renderNav(){
   navList.innerHTML = CATS.map(c => `
@@ -487,6 +597,16 @@ function renderChain(){
 }
 
 function renderCards(){
+  if(!query && activeCat==='quiz'){
+    pageTitle.textContent = 'Quiz'; pageSub.textContent = `${QUIZ.length} questions — réponds puis lis l'explication.`;
+    crumb.textContent = '— quiz'; chainTop.style.display='none'; noResults.style.display='none';
+    startQuiz(); return;
+  }
+  if(!query && activeCat==='flashcards'){
+    pageTitle.textContent = 'Flashcards'; pageSub.textContent = `${FLASHCARDS.length} cartes — clique pour retourner.`;
+    crumb.textContent = '— flashcards'; chainTop.style.display='none'; noResults.style.display='none';
+    startFlashcards(); return;
+  }
   let list;
   if(query){
     const q = query.toLowerCase();
@@ -524,6 +644,104 @@ function renderCards(){
 searchInput.addEventListener('input', (e)=>{ query = e.target.value.trim(); renderCards(); renderNav(); });
 
 renderNav(); renderCards();
+
+/* ---------------- QUIZ ENGINE ---------------- */
+let quizOrder = [], quizIdx = 0, quizScore = 0, quizAnswered = false;
+
+function shuffled(n){ const a=[...Array(n).keys()]; for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+
+function startQuiz(){
+  quizOrder = shuffled(QUIZ.length); quizIdx = 0; quizScore = 0; quizAnswered = false;
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion(){
+  if(quizIdx >= quizOrder.length){ renderQuizResult(); return; }
+  const item = QUIZ[quizOrder[quizIdx]];
+  quizAnswered = false;
+  const pct = Math.round((quizIdx/quizOrder.length)*100);
+  cardList.innerHTML = `
+    <div class="quiz-progress">
+      <span>Q${quizIdx+1}/${quizOrder.length}</span>
+      <div class="quiz-bar"><div class="quiz-bar-fill" style="width:${pct}%"></div></div>
+      <span>score ${quizScore}</span>
+    </div>
+    <div class="quiz-card">
+      <h3>${item.q}</h3>
+      <div id="quizOpts"></div>
+      <div class="quiz-exp" id="quizExp"></div>
+      <button class="quiz-next" id="quizNextBtn">Suivant →</button>
+    </div>`;
+  const opts = document.getElementById('quizOpts');
+  item.options.forEach((opt, i)=>{
+    const b = document.createElement('button');
+    b.className = 'quiz-opt'; b.textContent = opt;
+    b.addEventListener('click', ()=> answerQuiz(i, item));
+    opts.appendChild(b);
+  });
+  document.getElementById('quizNextBtn').addEventListener('click', ()=>{ quizIdx++; renderQuizQuestion(); });
+}
+
+function answerQuiz(i, item){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  const buttons = document.querySelectorAll('#quizOpts .quiz-opt');
+  buttons.forEach((b, idx)=>{
+    b.disabled = true;
+    if(idx === item.correct) b.classList.add('correct');
+    else if(idx === i) b.classList.add('wrong');
+  });
+  if(i === item.correct) quizScore++;
+  const exp = document.getElementById('quizExp');
+  exp.textContent = item.exp; exp.classList.add('show');
+  document.getElementById('quizNextBtn').classList.add('show');
+}
+
+function renderQuizResult(){
+  const total = quizOrder.length;
+  const pct = Math.round((quizScore/total)*100);
+  cardList.innerHTML = `
+    <div class="quiz-card quiz-result">
+      <div class="score">${quizScore}/${total}</div>
+      <p>${pct}% de bonnes réponses. ${pct>=80?'Solide — tu es prêt.':pct>=50?'Pas mal, relis les fiches sur tes points faibles.':'Retourne dans les catégories pour réviser avant de retenter.'}</p>
+      <button class="quiz-restart" id="quizRestartBtn">Recommencer le quiz</button>
+    </div>`;
+  document.getElementById('quizRestartBtn').addEventListener('click', startQuiz);
+}
+
+/* ---------------- FLASHCARD ENGINE ---------------- */
+let fcOrder = [], fcIdx = 0, fcFlipped = false;
+
+function startFlashcards(){
+  fcOrder = shuffled(FLASHCARDS.length); fcIdx = 0; fcFlipped = false;
+  renderFlashcard();
+}
+
+function renderFlashcard(){
+  const item = FLASHCARDS[fcOrder[fcIdx]];
+  cardList.innerHTML = `
+    <div class="fc-progress">carte ${fcIdx+1}/${fcOrder.length}</div>
+    <div class="fc-stage">
+      <div class="fc-card ${fcFlipped?'back':''}" id="fcCard">
+        <span class="fc-label">${fcFlipped?'réponse':'terme'}</span>
+        <div class="fc-content">${fcFlipped ? item.back : item.front}</div>
+      </div>
+    </div>
+    <div class="fc-hint"># clique la carte pour la retourner</div>
+    <div class="fc-controls">
+      <button id="fcPrev">← Précédent</button>
+      <button id="fcFlip" class="primary">Retourner</button>
+      <button id="fcNext">Suivant →</button>
+      <button id="fcShuffle">🔀 Mélanger</button>
+    </div>`;
+  document.getElementById('fcCard').addEventListener('click', flipFlashcard);
+  document.getElementById('fcFlip').addEventListener('click', flipFlashcard);
+  document.getElementById('fcPrev').addEventListener('click', ()=>{ fcIdx = (fcIdx-1+fcOrder.length)%fcOrder.length; fcFlipped=false; renderFlashcard(); });
+  document.getElementById('fcNext').addEventListener('click', ()=>{ fcIdx = (fcIdx+1)%fcOrder.length; fcFlipped=false; renderFlashcard(); });
+  document.getElementById('fcShuffle').addEventListener('click', startFlashcards);
+}
+
+function flipFlashcard(){ fcFlipped = !fcFlipped; renderFlashcard(); }
 
 /* ---------------- MOBILE MENU ---------------- */
 const sidebar = document.getElementById('sidebar');
