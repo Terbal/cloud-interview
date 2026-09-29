@@ -1,4 +1,4 @@
-const CACHE_NAME = "cloud-interview-v2";
+const CACHE_NAME = "cloud-interview-v3";
 const ASSETS = [
   "./",
   "./index.html",

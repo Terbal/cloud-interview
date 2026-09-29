@@ -255,6 +255,7 @@ const CATS = [
   {id:'compute', label:'Compute — Lambda'},
   {id:'linux', label:'Linux & troubleshooting'},
   {id:'projet', label:'Ton projet monitoring'},
+  {id:'ha', label:'Haute disponibilité'},
   {id:'quiz', label:'Quiz'},
   {id:'flashcards', label:'Flashcards'},
 ];
@@ -496,6 +497,186 @@ ip route    → table de routage locale, prochain saut par destination</div>`},
 <div class="diagram">Incident → Métrique/alerte → Diagnostic → Logs
 → Root Cause → Correction → Vérification</div>
 <p>C'est du <b>Cloud Operations</b> concret — le raisonnement compte plus que la commande exacte.</p>`},
+
+// ---------------- HAUTE DISPONIBILITE ----------------
+{cat:'ha', tag:'concept', title:"C'est quoi la haute disponibilité ?", body:`
+<p>La HA n'est pas un service unique : c'est une façon de concevoir l'architecture pour qu'une panne n'arrête pas le service.</p>
+<div class="diagram">Sans HA :        Utilisateur → EC2 (❌) → indisponible
+
+Avec HA :                    ┌── EC2 AZ-A ──┐
+              Utilisateur → ALB              ├→ Base de données
+                             └── EC2 AZ-B ──┘
+
+Si AZ-A tombe, le trafic continue vers AZ-B.</div>
+<div class="phrase"><b>idée fondamentale</b>Éliminer les Single Points of Failure (SPOF) — les composants dont la panne suffit à faire tomber tout le service.</div>`},
+{cat:'ha', tag:'concept', title:"Availability, Fault tolerance, Disaster Recovery", body:`
+<ul>
+<li><b>Availability</b> — la capacité d'un système à rester accessible.</li>
+<li><b>Fault tolerance</b> — la capacité à continuer de fonctionner malgré une panne.</li>
+<li><b>Disaster Recovery</b> — la capacité à restaurer le service après un incident majeur.</li>
+</ul>
+<div class="diagram">Serveur tombe          → High Availability
+AZ entière tombe       → Fault tolerance / HA multi-AZ
+Region entière tombe   → Disaster Recovery / multi-Region</div>`},
+{cat:'ha', tag:'principe', title:"Le principe central : la redondance", body:`
+<div class="diagram">1 serveur   → 2 serveurs
+1 AZ        → AZ-A + AZ-B
+1 base      → Primary → Standby / Replica</div>
+<div class="trap"><b>piège</b>Avoir deux machines ne suffit pas à faire de la HA : il faut aussi détecter la panne, rediriger le trafic et récupérer les données. C'est là qu'interviennent les services AWS.</div>`},
+{cat:'ha', tag:'référence', title:"Les services AWS liés à la HA", body:`
+<div class="diagram">Availability Zones   → isolation physique des pannes
+ALB                  → distribue le trafic + health checks
+Auto Scaling Group   → maintient le nombre d'instances
+Route 53             → DNS + routage/failover
+RDS Multi-AZ         → redondance de la base
+Aurora               → base distribuée hautement disponible
+S3                   → stockage à très haute durabilité
+CloudWatch           → monitoring et détection
+AWS Backup / EBS snapshots → protection et restauration
+Multi-Region         → protection contre une panne régionale</div>`},
+{cat:'ha', tag:'AZ', title:"Availability Zones — la première brique", body:`
+<p>Une Region contient plusieurs AZ, isolées pour qu'une panne dans l'une n'affecte pas les autres.</p>
+<div class="diagram">AZ-A
+ ├── EC2-1
+ └── EC2-2
+        ↓ panne AZ
+❌ EC2-1
+❌ EC2-2
+
+VS
+
+AZ-A: EC2   AZ-B: EC2   → une panne d'AZ-A laisse AZ-B opérationnelle</div>
+<div class="trap"><b>piège</b>Mettre deux EC2 dans la même AZ ne protège pas contre la perte de cette AZ.</div>`},
+{cat:'ha', tag:'ALB', title:"ALB : distribution + health checks", body:`
+<div class="diagram">ALB
+ ├── EC2-A → /health → 200 OK
+ ├── EC2-B → /health → 200 OK
+ └── EC2-C → /health → 500 ❌  (retiré du trafic)</div>
+<p>L'ALB considère EC2-C comme unhealthy et arrête de lui envoyer du trafic : c'est une forme de <b>failover automatique</b> au niveau instance.</p>`},
+{cat:'ha', tag:'ASG', title:"Auto Scaling Group : remplacer une instance morte", body:`
+<div class="diagram">Desired = 2
+EC2-A ✅  EC2-B ✅
+        ↓ EC2-A tombe
+EC2-A ❌  EC2-B ✅   (Available=1, Desired=2)
+        ↓ ASG lance une nouvelle instance
+EC2-B ✅  EC2-C 🆕
+        ↓ health check OK → ALB envoie du trafic à EC2-C</div>
+<div class="phrase"><b>à retenir</b>ALB + Auto Scaling Group + Multi-AZ = combinaison centrale de la HA applicative.</div>`},
+{cat:'ha', tag:'RDS', title:"RDS Multi-AZ — HA de la base, pas de la performance", body:`
+<div class="diagram">AZ-A                    AZ-B
+RDS Primary  ───────→   RDS Standby
+        ↓ panne du Primary
+Standby devient Primary (failover)</div>
+<div class="trap"><b>piège</b>Ne dis jamais « RDS Multi-AZ sert à augmenter les performances ». Son objectif est la haute disponibilité et le failover — pas le scaling en lecture (ça, c'est le rôle des Read Replicas).</div>`},
+{cat:'ha', tag:'RDS', title:"Multi-AZ vs Read Replica — la confusion à éviter", body:`
+<div class="diagram">Multi-AZ Standby        → objectif : HA / failover, réplication généralement SYNCHRONE, ne sert pas les lectures
+Read Replica            → objectif : scaling des lectures, réplication ASYNCHRONE, sert les lectures applicatives</div>
+<p>Une Read Replica peut avoir un léger <b>replication lag</b> par rapport au Primary — les deux ne sont pas synchronisés instantanément.</p>
+<div class="phrase"><b>phrase entretien</b>« Standby répond à : si mon serveur principal meurt, prends sa place. Read Replica répond à : j'ai trop de lectures, aide-moi à les absorber. »</div>`},
+{cat:'ha', tag:'DNS', title:"Route 53 vs ALB — deux niveaux différents", body:`
+<p>Route 53 est un service <b>DNS</b>, pas un Load Balancer.</p>
+<div class="diagram">Route 53  → "Quel endpoint dois-je utiliser ?"  (nom de domaine → destination)
+ALB       → "Parmi mes serveurs disponibles, lequel reçoit cette requête ?"
+
+Utilisateur → Route 53 (monapp.com → ALB) → ALB → EC2-A / EC2-B / EC2-C</div>
+<p>Route 53 ne connaît généralement pas le détail des EC2 : il connaît l'ALB. L'ALB, lui, connaît ses targets.</p>`},
+{cat:'ha', tag:'DNS', title:"Route 53 et le failover multi-Region", body:`
+<div class="diagram">          Route 53
+          /       \\
+     Region A     Region B
+       ALB           ALB
+        │             │
+       EC2           EC2</div>
+<p>Si Route 53 détecte que la destination principale est unhealthy, il peut répondre avec l'autre destination selon la politique configurée (active-active ou active-passive).</p>
+<div class="trap"><b>nuance</b>Le failover DNS n'est pas instantané comme un ALB : à cause du TTL et du cache DNS, certains utilisateurs peuvent garder l'ancienne réponse pendant un moment.</div>
+<div class="diagram">Panne EC2      → ALB détecte et retire l'instance (rapide)
+Panne AZ       → le trafic continue vers l'autre AZ (rapide)
+Panne Region   → Route 53 bascule via DNS (délai lié au TTL)</div>`},
+{cat:'ha', tag:'monitoring', title:"CloudWatch — comment détecte-t-on un problème ?", body:`
+<p>La HA ne consiste pas seulement à ajouter des serveurs : il faut observer le système.</p>
+<div class="diagram">CPU > 80% → CloudWatch Alarm → SNS / Auto Scaling / action
+ALB 5xx ↑ → CloudWatch → Alarm → intervention / automatisation</div>
+<p>CloudWatch surveille CPU, réseau, ALB, EC2, RDS, métriques applicatives et logs. La mémoire nécessite généralement un agent/métrique supplémentaire côté EC2 Linux.</p>`},
+{cat:'ha', tag:'stockage', title:"S3 et la haute disponibilité", body:`
+<p>Avec S3, tu ne gères pas de serveurs de stockage : AWS gère l'infrastructure et la réplication interne selon la classe/configuration choisie. C'est un stockage conçu pour une très haute durabilité — utile pour ne pas dépendre d'un disque local unique (documents, backups, logs).</p>`},
+{cat:'ha', tag:'méthode', title:"Le vrai niveau profond : éliminer les SPOF", body:`
+<div class="diagram">Internet → ALB → EC2-A (SPOF) → RDS (SPOF potentiel)
+
+devient
+
+Internet → ALB → EC2-A (AZ-A) + EC2-B (AZ-B) → RDS Multi-AZ
+                        ↓
+                   CloudWatch → Alarmes
+                        ↓
+                    Route 53 (DNS/failover)</div>
+<p>La question à te poser pour chaque couche : <b>« Si ce composant tombe, mon application continue-t-elle à fonctionner ? »</b></p>`},
+{cat:'ha', tag:'nuance', title:"HA ne veut pas dire zéro panne", body:`
+<p>Une architecture HA cherche à <b>réduire la probabilité d'indisponibilité et la durée de l'interruption</b> — elle ne garantit pas l'absence totale de panne.</p>
+<div class="diagram">Panne → Détection → Failover → Récupération
+(quelques secondes ou minutes d'interruption possibles selon l'architecture)</div>`},
+{cat:'ha', tag:'SLA', title:"Les chiffres de disponibilité (SLA)", body:`
+<div class="diagram">99%        → ~87,6 h d'indisponibilité/an
+99,9%      → ~8,76 h/an
+99,99%     → ~52,6 min/an
+99,999%    → ~5,26 min/an</div>
+<p>Passer de 99,9% à 99,99% peut demander énormément de travail et de redondance supplémentaires.</p>`},
+{cat:'ha', tag:'piège', title:"« J'ai deux serveurs donc j'ai de la HA » — pas forcément", body:`
+<div class="trap"><b>piège</b>Si tes deux EC2 redondantes pointent vers le même stockage local critique, ou si la base de données reste un SPOF non protégé, ton système peut quand même tomber entièrement. Pose la question pour CHAQUE couche, pas seulement pour le compute.</div>`},
+{cat:'ha', tag:'phrase', title:"Réponse complète : « Concevez une infra AWS hautement disponible »", body:`
+<div class="phrase"><b>phrase entretien</b>« J'identifie d'abord les Single Points of Failure. Pour la couche applicative, je déploie plusieurs EC2 sur plusieurs AZ derrière un ALB avec health checks, et un Auto Scaling Group pour remplacer une instance défaillante. Pour la base, j'utilise RDS Multi-AZ pour le failover. J'utilise CloudWatch pour la détection et les alarmes. Et selon les exigences, j'ajoute Route 53 pour le failover DNS et une stratégie Multi-Region / Disaster Recovery si l'entreprise doit se protéger contre une panne régionale. »</div>`},
+{cat:'ha', tag:'coût', title:"RDS vs MySQL sur EC2 — le vrai calcul", body:`
+<p>Installer MySQL sur EC2 fonctionne, mais tu deviens l'administrateur complet : patchs, backups, réplication, monitoring, failover, sécurité…</p>
+<div class="diagram">EC2 + MySQL "pas cher" = EC2 + EBS + backups + monitoring
+                        + 2e EC2 pour HA + réplication + temps humain
+
+RDS = RDS + stockage + backups (+ Multi-AZ si besoin)</div>
+<p>Pour un petit projet perso, EC2+MySQL est acceptable. Pour une application métier avec exigence de disponibilité, RDS réduit fortement la charge opérationnelle — même si son coût affiché est plus élevé.</p>`},
+{cat:'ha', tag:'stockage', title:"S3 vs EC2+EBS pour stocker des fichiers", body:`
+<div class="diagram">EC2-A → EBS → fichiers   (disque attaché à UNE instance)
+EC2-A ──┐
+EC2-B ──┼──→ S3          (objets accessibles par toutes les instances)
+EC2-C ──┘</div>
+<div class="trap"><b>piège</b>Ne réponds pas « EC2 est plus cher que S3 » — le vrai problème est qu'EC2+EBS n'est pas le bon outil pour du stockage d'objets durable, partagé et découplé du compute.</div>
+<div class="diagram">EBS → disque
+EFS → disque partagé (filesystem réseau, plusieurs EC2)
+S3  → stockage d'objets</div>`},
+{cat:'ha', tag:'stockage', title:"EFS et la HA applicative", body:`
+<p>Si des utilisateurs uploadent un fichier stocké uniquement sur le disque local d'EC2-A, EC2-B ne peut pas y accéder — problème derrière un Load Balancer.</p>
+<div class="diagram">Utilisateur → ALB → EC2-A / EC2-B
+                        \\      /
+                          EFS   (filesystem partagé, monté en NFS)</div>
+<p>Un EFS Regional stocke les données de façon redondante sur plusieurs AZ, et peut être monté depuis des EC2 situées dans différentes AZ.</p>`},
+{cat:'ha', tag:'monitoring', title:"CloudWatch vs Prometheus/Grafana : quand choisir quoi ?", body:`
+<div class="diagram">Surveiller AWS rapidement (EC2, RDS, ALB, Lambda) → CloudWatch
+Plateforme de monitoring très personnalisable      → Node Exporter → Prometheus → Grafana</div>
+<p>En entreprise, les deux coexistent souvent : CloudWatch pour les services AWS natifs, Prometheus/Grafana pour un monitoring Linux/applicatif plus fin. Ils ne sont pas concurrents.</p>`},
+{cat:'ha', tag:'projet', title:"Ton incident Node Exporter — la vraie histoire d'entretien", body:`
+<p>Ne dis jamais « Node Exporter ne marchait pas ». Raconte une démarche de diagnostic.</p>
+<div class="diagram">1. Vérifier Node Exporter    → curl http://localhost:9100/metrics
+2. Vérifier le réseau       → curl http://IP:9100/metrics depuis Prometheus
+3. Comprendre le contexte   → un conteneur a son propre environnement isolé</div>
+<p>Le vrai problème : Node Exporter tournait dans un conteneur et n'observait pas automatiquement les ressources du host.</p>
+<div class="diagram">Solution A → installer Node Exporter directement sur l'EC2 host
+Solution B → monter /proc, /sys et le filesystem du host dans le conteneur</div>
+<div class="phrase"><b>phrase entretien</b>« Le point important du diagnostic a été de comprendre le contexte d'exécution de Node Exporter : dans un conteneur, il n'a pas automatiquement la même visibilité que le host. J'ai adapté le déploiement pour lui donner accès aux informations du système hôte. Cette expérience m'a appris qu'il ne suffit pas de vérifier qu'un agent fonctionne, mais aussi quelle ressource il observe réellement. »</div>`},
+{cat:'ha', tag:'architecture', title:"Dimensionner selon le besoin — ne construis pas une usine pour un MVP", body:`
+<div class="diagram">MVP / petit projet   → Route 53 → EC2 → RDS (ou DB sur EC2) → S3
+Application métier   → Route 53 → ALB → EC2(AZ-A)+EC2(AZ-B) → RDS Multi-AZ + S3 (+ ASG, CloudWatch, backups)
+Application critique → Route 53 → Region A(ALB+ASG+Multi-AZ) + Region B(DR) → RDS/DR + S3</div>
+<div class="phrase"><b>phrase entretien</b>« Pour une petite application non critique, une seule EC2 peut suffire. Si la disponibilité compte, j'ajoute plusieurs instances multi-AZ derrière un ALB avec Auto Scaling, RDS Multi-AZ pour la base, S3/EFS pour les fichiers, et je n'introduis le Multi-Region que si les exigences de disponibilité ou de Disaster Recovery le justifient. »</div>`},
+{cat:'ha', tag:'coût', title:"Combien coûte une architecture HA ?", body:`
+<p>Il n'y a pas de prix unique — tu paies chaque composant ajouté pour réduire le risque.</p>
+<div class="diagram">EC2 + EBS + ALB(+LCU) + RDS(+Multi-AZ) + S3 + Route 53 + NAT + Data Transfer + CloudWatch</div>
+<ul>
+<li>RDS Multi-AZ coûte environ <b>2x</b> un déploiement Single-AZ équivalent, car AWS maintient des ressources en double.</li>
+<li>Route 53 reste léger pour un petit système (hosted zone publique à partir de $0,50/mois, requêtes facturées séparément).</li>
+</ul>
+<div class="phrase"><b>à retenir</b>HA = payer davantage pour réduire le risque d'indisponibilité. On ne met pas du Multi-Region sur une app à 20 utilisateurs/jour juste parce que c'est possible.</div>`},
+{cat:'ha', tag:'carte mentale', title:"Carte mentale HA à retenir", body:`
+<div class="diagram">HA AWS
+ ├── REDONDANCE → Multi-AZ → EC2×plusieurs → ALB → Auto Scaling → RDS Multi-AZ → Backup → DR → Multi-Region
+ └── DÉTECTION  → CloudWatch → Health Checks</div>
+<p>Questionnement complet à tenir en tête : une machine tombe → qui détecte ? → qui la retire du trafic ? → qui la remplace ? → où sont les données ? → comment la base continue ? → comment vérifie-t-on que le service fonctionne ? → et si toute l'AZ tombe ? → et si toute la Region tombe ?</p>`},
 ];
 
 const QUIZ = [
@@ -524,6 +705,20 @@ const QUIZ = [
   {q:"Dans une architecture API Gateway → Lambda → S3, à quoi sert la Pre-Signed URL ?", options:["Chiffrer le code Lambda","Donner un accès temporaire à un objet S3 selon permissions et durée définies","Router le trafic vers un NAT Gateway","Authentifier l'API Gateway auprès d'IAM"], correct:1, exp:"La Pre-Signed URL permet au client de télécharger l'objet S3 directement, de façon temporaire et sécurisée."},
   {q:"Quelle commande Linux affiche l'espace disque utilisé par système de fichiers ?", options:["free -h","top","df -h","ss -tulpn"], correct:2, exp:"df -h affiche l'utilisation des filesystems en format lisible."},
   {q:"Face à « le serveur Web n'est plus accessible », quelle est la première étape de méthode ?", options:["Redémarrer le serveur immédiatement","Déterminer si le problème vient de la connectivité, de la machine, du réseau ou du service","Consulter directement les logs applicatifs","Recréer une nouvelle instance EC2"], correct:1, exp:"On isole d'abord la catégorie du problème (connectivité / machine / réseau / service) avant d'agir, plutôt que de réciter des commandes au hasard."},
+  {q:"Quel est l'objectif principal de RDS Multi-AZ ?", options:["Augmenter les performances de lecture","La haute disponibilité et le failover en cas de panne", "Réduire le coût de stockage", "Chiffrer automatiquement les données"], correct:1, exp:"RDS Multi-AZ vise la HA/failover, pas la performance. Pour le scaling en lecture, on utilise les Read Replicas."},
+  {q:"Quelle est la différence de réplication entre un Standby Multi-AZ et une Read Replica ?", options:["Aucune différence","Le Standby réplique généralement en synchrone, la Read Replica en asynchrone","La Read Replica réplique en synchrone, le Standby en asynchrone","Les deux répliquent en temps réel garanti"], correct:1, exp:"Multi-AZ utilise généralement une réplication synchrone pour le failover ; les Read Replicas utilisent une réplication asynchrone, d'où un possible replication lag."},
+  {q:"Route 53 est principalement…", options:["Un Load Balancer","Un service DNS qui dirige vers une destination (ex. un ALB)","Un pare-feu applicatif","Un service de cache CDN uniquement"], correct:1, exp:"Route 53 répond à « quel endpoint utiliser ? » (DNS), tandis que l'ALB répond à « quel serveur reçoit la requête ? »."},
+  {q:"Pourquoi le failover Route 53 n'est-il pas aussi instantané qu'un failover ALB ?", options:["Route 53 est plus lent techniquement","À cause du cache DNS et du TTL, certains utilisateurs gardent une ancienne réponse un moment","Route 53 ne fait pas de health checks","Ce n'est pas vrai, c'est exactement aussi rapide"], correct:1, exp:"Le DNS est mis en cache selon le TTL configuré ; un TTL bas réduit ce délai mais ne l'élimine pas totalement."},
+  {q:"Que fait un Auto Scaling Group quand une instance devient unhealthy ?", options:["Il ne fait rien, c'est le rôle de l'ALB seul","Il détecte l'écart avec la capacité désirée et lance une nouvelle instance","Il supprime définitivement la capacité désirée","Il bascule automatiquement vers une autre Region"], correct:1, exp:"L'ASG compare le nombre d'instances disponibles à la capacité désirée et relance une instance si besoin."},
+  {q:"Deux EC2 redondantes derrière un ALB suffisent-elles toujours à garantir la HA ?", options:["Oui, toujours","Non — il faut vérifier chaque couche, y compris la base de données et le stockage partagé", "Oui, si elles sont dans la même AZ", "Non, il faut au minimum 5 instances"], correct:1, exp:"Si la base de données ou un stockage local reste un SPOF non protégé, le système peut tomber malgré des EC2 redondantes."},
+  {q:"Pourquoi éviter de placer deux EC2 redondantes dans la même Availability Zone ?", options:["Ça coûte plus cher","La panne de cette AZ ferait tomber les deux instances en même temps","Ce n'est pas techniquement possible","AWS l'interdit"], correct:1, exp:"Répartir sur plusieurs AZ protège contre la perte d'une AZ entière."},
+  {q:"Multi-AZ protège contre quel type de panne ? Et Multi-Region ?", options:["Les deux protègent uniquement contre une panne réseau","Multi-AZ protège à l'intérieur d'une Region ; Multi-Region protège contre la perte d'une Region entière","Multi-Region est un sous-ensemble de Multi-AZ","Multi-AZ protège contre la perte d'une Region entière"], correct:1, exp:"Multi-AZ = résilience interne à une Region. Multi-Region = protection contre la perte totale d'une Region, plus coûteux et complexe."},
+  {q:"Pourquoi choisir S3 plutôt qu'EC2+EBS pour des fichiers partagés entre plusieurs instances ?", options:["EBS est toujours plus cher que S3","EBS est un disque attaché à une seule instance ; S3 est un stockage d'objets accessible par toutes les instances","S3 est plus rapide en tout point","EBS ne peut pas stocker de fichiers"], correct:1, exp:"EBS est lié à une instance, dans une AZ. S3 est un service de stockage d'objets indépendant du compute, accessible par plusieurs instances."},
+  {q:"Quel service permet à plusieurs EC2 de monter le même filesystem partagé en NFS ?", options:["Amazon S3","Amazon EFS","Amazon EBS","AWS Snow Family"], correct:1, exp:"EFS est un filesystem réseau partagé, monté simultanément par plusieurs EC2 — contrairement à EBS (disque dédié) ou S3 (objets)."},
+  {q:"Quand privilégier RDS plutôt qu'installer MySQL soi-même sur EC2 ?", options:["Jamais, EC2 est toujours préférable","Quand on veut réduire la charge opérationnelle (patchs, backups, HA) pour une application avec exigences de disponibilité","Uniquement pour les très petits projets personnels","RDS ne sert que pour PostgreSQL"], correct:1, exp:"RDS prend en charge une grande partie de l'administration ; EC2+MySQL garde plus de contrôle mais demande de tout gérer soi-même."},
+  {q:"Une disponibilité de 99,99% par an correspond approximativement à…", options:["~87 heures d'indisponibilité","~8,76 heures d'indisponibilité","~52,6 minutes d'indisponibilité","~5 secondes d'indisponibilité"], correct:2, exp:"99,99% de disponibilité correspond à environ 52,6 minutes d'indisponibilité cumulée sur une année."},
+  {q:"Quand utiliser CloudWatch plutôt que Prometheus/Grafana ?", options:["Jamais, Prometheus est toujours supérieur","Pour surveiller rapidement des services AWS natifs (EC2, RDS, ALB, Lambda)","Uniquement pour les architectures on-premise","CloudWatch ne fonctionne qu'avec Docker"], correct:1, exp:"CloudWatch est nativement intégré aux services AWS ; Prometheus/Grafana offre une plateforme de monitoring plus personnalisable, notamment sur Linux."},
+  {q:"Dans l'incident Node Exporter en conteneur, quelle était la vraie cause du problème ?", options:["Node Exporter était mal installé","Le conteneur avait son propre environnement isolé et ne voyait pas automatiquement les ressources du host","Prometheus ne pouvait pas atteindre le port 9100","Grafana affichait un mauvais dashboard"], correct:1, exp:"Un conteneur isole son environnement ; sans montage explicite de /proc, /sys et du filesystem du host, Node Exporter n'observe pas le host complet."},
 ];
 
 const FLASHCARDS = [
@@ -555,6 +750,25 @@ const FLASHCARDS = [
   {front:"Lambda / FaaS", back:"Compute serverless : AWS gère l'infrastructure, la capacité et la mise à l'échelle. Le terme précis est FaaS (Function as a Service)."},
   {front:"Pre-Signed URL", back:"URL temporaire donnant accès à un objet S3 selon des permissions et une durée définies."},
   {front:"Méthode de troubleshooting", back:"Connectivité → Machine → Réseau → Service → Ports → Logs → Correction → Vérification."},
+  {front:"Single Point of Failure (SPOF)", back:"Un composant dont la panne suffit à faire tomber tout le service. Toute la démarche HA vise à les éliminer ou les rendre redondants."},
+  {front:"Availability vs Fault tolerance vs Disaster Recovery", back:"Availability : rester accessible. Fault tolerance : continuer à fonctionner malgré une panne. Disaster Recovery : restaurer le service après un incident majeur."},
+  {front:"ALB — health checks", back:"L'ALB interroge régulièrement chaque instance (ex. /health) ; une instance unhealthy est automatiquement retirée du trafic — un failover automatique au niveau instance."},
+  {front:"Auto Scaling Group", back:"Maintient le nombre d'instances désiré : si une instance tombe, l'ASG en relance une nouvelle, que l'ALB intègre au trafic après un health check réussi."},
+  {front:"RDS Multi-AZ", back:"Instance standby dans une autre AZ, réplication généralement synchrone, objectif : haute disponibilité et failover — pas la performance."},
+  {front:"Read Replica", back:"Copie en réplication asynchrone d'une base, destinée à absorber les lectures et décharger le Primary. Peut avoir un léger replication lag."},
+  {front:"Multi-AZ vs Read Replica", back:"Multi-AZ = HA/failover, ne sert pas les lectures applicatives. Read Replica = scaling des lectures, sert les lectures applicatives."},
+  {front:"Route 53 vs ALB", back:"Route 53 (DNS) répond à « quel endpoint utiliser ? ». L'ALB répond à « quel serveur reçoit la requête ? ». Deux niveaux différents, pas concurrents."},
+  {front:"Failover Route 53", back:"Peut basculer le trafic vers une autre Region/destination selon une politique (active-active/active-passive), mais limité par le cache DNS et le TTL — moins instantané qu'un failover ALB."},
+  {front:"CloudWatch", back:"Service de monitoring natif AWS : CPU, réseau, ALB, EC2, RDS, logs, métriques applicatives. Permet de créer des alarmes déclenchant des actions (SNS, Auto Scaling…)."},
+  {front:"CloudWatch vs Prometheus/Grafana", back:"CloudWatch : natif AWS, rapide à mettre en place sur les services managés. Prometheus/Grafana : plateforme de monitoring Linux/applicatif très personnalisable. Souvent complémentaires."},
+  {front:"S3 et la durabilité", back:"Stockage d'objets où AWS gère l'infrastructure et la réplication interne — conçu pour une très haute durabilité, évite de dépendre d'un disque local unique."},
+  {front:"EBS vs EFS vs S3", back:"EBS = disque attaché à une seule instance. EFS = disque partagé (NFS) monté par plusieurs instances. S3 = stockage d'objets indépendant du compute."},
+  {front:"RDS vs MySQL sur EC2", back:"MySQL sur EC2 : contrôle total mais toute l'administration (patchs, backups, HA) à ta charge. RDS : AWS gère une grande partie de l'infra, au prix d'un coût affiché plus élevé mais souvent d'une charge opérationnelle réduite."},
+  {front:"HA ne veut pas dire zéro panne", back:"La HA réduit la probabilité et la durée d'indisponibilité ; elle ne garantit pas l'absence totale de panne (détection → failover → récupération prend du temps)."},
+  {front:"SLA 99,9% vs 99,99%", back:"99,9% ≈ 8,76 h d'indisponibilité/an. 99,99% ≈ 52,6 min/an. Passer de l'un à l'autre demande beaucoup de redondance supplémentaire."},
+  {front:"Multi-AZ vs Multi-Region", back:"Multi-AZ : résilience à l'intérieur d'une Region. Multi-Region : protection contre la perte totale d'une Region — plus complexe et coûteux, à réserver aux besoins réels."},
+  {front:"Dimensionner une architecture HA", back:"MVP : EC2+RDS+S3 simple. Application métier : ALB+ASG multi-AZ+RDS Multi-AZ+S3. Application critique : Multi-Region avec Route 53 en plus. Adapter au besoin, pas au maximum technique possible."},
+  {front:"Node Exporter en conteneur", back:"Un conteneur isole son environnement : sans monter /proc, /sys et le filesystem du host, Node Exporter observe le conteneur et non l'instance hôte entière."},
 ];
 
 /* ---------------- RENDER ---------------- */
